@@ -1,7 +1,7 @@
 from flask import Flask, render_template, jsonify, request
 from src.helper import download_embeddings
 from langchain_pinecone import PineconeVectorStore
-from langchain_ollama import OllamaLLM as Ollama  # ✅ Updated modern Ollama import
+from langchain_ollama import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
@@ -13,7 +13,7 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# ✅ Initialize Hugging Face embeddings
+# ✅ Initialize embeddings (Hugging Face)
 embeddings = download_embeddings()
 
 # ✅ Connect to Pinecone index
@@ -23,25 +23,32 @@ vectorstore = PineconeVectorStore.from_existing_index(
     embedding=embeddings
 )
 
-# ✅ Initialize local Ollama model (running on your PC)
-# Make sure "ollama serve" is running and "mistral" is downloaded via "ollama pull mistral"
-llm = Ollama(model="mistral", temperature=0.2)
+# ✅ Initialize local LLM (Ollama)
+llm = OllamaLLM(model="mistral", temperature=0.2)
 
-# ✅ Create retriever (to fetch relevant context from Pinecone)
+# ✅ Create retriever
 retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
 
-# ✅ Function to combine multiple retrieved documents into one text block
-def combine_docs(retrieved_dict):
-    docs = retrieved_dict["documents"] if isinstance(retrieved_dict, dict) else retrieved_dict
+
+# ✅ Combine retrieved documents into one string
+def combine_docs(docs):
     return "\n\n".join([d.page_content for d in docs])
 
-# ✅ Define the system prompt for MediBot
+
+# ✅ Ensure retriever always gets plain string input
+def safe_query(x):
+    """Ensure retriever only receives plain text."""
+    if isinstance(x, dict):
+        return str(x.get("input", ""))
+    return str(x)
+
+
+# ✅ Prompt Template
 prompt = ChatPromptTemplate.from_template(
     """
-    You are MediBot — a knowledgeable and responsible AI medical assistant.
-    Use the retrieved medical context below to answer the user's question accurately,
-    clearly, and concisely. If the answer is unclear, say:
-    "I'm not certain — please consult a medical professional."
+    You are MediBot — a helpful, responsible medical assistant.
+    Use the retrieved medical context below to answer the question safely, factually, and concisely.
+    If you are not sure about the answer, say: "I'm not certain, please consult a medical professional."
 
     Context:
     {context}
@@ -51,44 +58,47 @@ prompt = ChatPromptTemplate.from_template(
     """
 )
 
-# ✅ Build the modern LangChain RAG pipeline
+# ✅ RAG Chain (Retriever → Prompt → Ollama → Output Parser)
 rag_chain = (
     {
-        "context": retriever | combine_docs,  # Get info from Pinecone
-        "input": RunnablePassthrough()        # Pass user input directly
+        "context": safe_query | retriever | combine_docs,
+        "input": RunnablePassthrough()
     }
     | prompt
     | llm
-    | StrOutputParser()                      # Parse Ollama output into plain text
+    | StrOutputParser()
 )
 
-# ✅ Flask routes
+
+# ✅ Flask Routes
 @app.route("/")
 def index():
-    return render_template("chat.html")  # Your frontend chat UI
+    return render_template("chat.html")
+
 
 @app.route("/get", methods=["POST"])
 def chat():
     msg = request.form["msg"]
-    print(f"User: {msg}")
+    print("🧑‍💻 User:", msg)
 
     try:
-        # 🔍 Retrieve relevant context from Pinecone
-        docs = retriever.invoke(msg)
+        # 🔍 Step 1: Retrieve documents
+        docs = retriever.invoke(str(msg))
         print("\n🔍 Retrieved from Pinecone:")
         for d in docs:
-            print("-", d.metadata.get("source"), "→", d.page_content[:100], "...\n")
+            print("-", d.metadata.get("source"), "→", d.page_content[:120], "...\n")
 
-        # 💬 Generate response using Ollama + retrieved context
-        response = rag_chain.invoke({"input": msg})
-        print("Response:", response)
+        # 🤖 Step 2: Run RAG chain
+        response = rag_chain.invoke({"input": str(msg)})
+        print("🧠 MediBot Response:", response)
 
         return jsonify({"response": response})
+
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        print("❌ Error:", str(e))
         return jsonify({"error": str(e)})
 
-# ✅ Run the Flask app
+
+# ✅ Run Flask App
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080, debug=True)

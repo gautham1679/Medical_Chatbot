@@ -1,81 +1,575 @@
-<link href="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
-<script src="//maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-
 <!DOCTYPE html>
 <html>
-	<head>
-		<title>Chatbot</title>
-		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
-		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css')}}"/>
-	</head>
-	
-	
-	<body>
-		<div class="container-fluid h-100">
-			<div class="row justify-content-center h-100">		
-				<div class="col-md-8 col-xl-6 chat">
-					<div class="card">
-						<div class="card-header msg_head">
-							<div class="d-flex bd-highlight">
-								<div class="img_cont">
-									<img src="https://cdn-icons-png.flaticon.com/512/387/387569.png" class="rounded-circle user_img">
-									<!-- <img src="https://www.prdistribution.com/spirit/uploads/pressreleases/2019/newsreleases/d83341deb75c4c4f6b113f27b1e42cd8-chatbot-florence-already-helps-thousands-of-patients-to-remember-their-medication.png" class="rounded-circle user_img"> -->
-									<span class="online_icon"></span>
-								</div>
-								<div class="user_info">
-									<span>Medical Chatbot</span>
-									<p>Ask me anything!</p>
-								</div>
-							</div>
-						</div>
-						<div id="messageFormeight" class="card-body msg_card_body">
-							
-							
-						</div>
-						<div class="card-footer">
-							<form id="messageArea" class="input-group">
-                                <input type="text" id="text" name="msg" placeholder="Type your message..." autocomplete="off" class="form-control type_msg" required/>
-								<div class="input-group-append">
-									<button type="submit" id="send" class="input-group-text send_btn"><i class="fas fa-location-arrow"></i></button>
-								</div>
-							</form>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		
-		<script>
-			$(document).ready(function() {
-				$("#messageArea").on("submit", function(event) {
-					const date = new Date();
-					const hour = date.getHours();
-					const minute = date.getMinutes();
-					const str_time = hour+":"+minute;
-					var rawText = $("#text").val();
+<head>
+    <title>MediBot - Your Medical Assistant</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-					var userHtml = '<div class="d-flex justify-content-end mb-4"><div class="msg_cotainer_send">' + rawText + '<span class="msg_time_send">'+ str_time + '</span></div><div class="img_cont_msg"><img src="https://i.ibb.co/d5b84Xw/Untitled-design.png" class="rounded-circle user_img_msg"></div></div>';
-					
-					$("#text").val("");
-					$("#messageFormeight").append(userHtml);
+        body, html {
+            height: 100%;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            background: #0f0c29;
+        }
 
-					$.ajax({
-						data: {
-							msg: rawText,	
-						},
-						type: "POST",
-						url: "/get",
-					}).done(function(data) {
-						var botHtml = '<div class="d-flex justify-content-start mb-4"><div class="img_cont_msg"><img src="https://cdn-icons-png.flaticon.com/512/387/387569.png" class="rounded-circle user_img_msg"></div><div class="msg_cotainer">' + data + '<span class="msg_time">' + str_time + '</span></div></div>';
-						$("#messageFormeight").append($.parseHTML(botHtml));
-					});
-					event.preventDefault();
-				});
-			});
-		</script>
-        
-    </body>
+        /* Animated gradient background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(-45deg, #0f0c29, #302b63, #24243e, #0f0c29);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            z-index: -1;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Floating particles */
+        .particle {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: rgba(102, 126, 234, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: float linear infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) scale(1);
+                opacity: 0;
+            }
+        }
+
+        .container-fluid {
+            padding: 0;
+            height: 100vh;
+        }
+
+        .row {
+            margin: 0;
+            height: 100vh;
+        }
+
+        .chat {
+            height: 100vh;
+            padding: 0;
+            max-width: 100%;
+        }
+
+        .card {
+            height: 100vh;
+            border-radius: 0 !important;
+            background: rgba(15, 12, 41, 0.85);
+            backdrop-filter: blur(20px);
+            box-shadow: none;
+            border: none;
+            overflow: hidden;
+            margin: 0;
+        }
+
+        .card-header {
+            border-radius: 0 !important;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.2) !important;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+            padding: 20px 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+            transform: rotate(45deg);
+            animation: shine 3s infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) rotate(45deg); }
+        }
+
+        .msg_head {
+            position: relative;
+            z-index: 1;
+        }
+
+        .img_cont {
+            position: relative;
+            height: 60px;
+            width: 60px;
+        }
+
+        .user_img {
+            height: 60px;
+            width: 60px;
+            border: 3px solid rgba(102, 126, 234, 0.6);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% {
+                box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            }
+            50% {
+                box-shadow: 0 4px 30px rgba(102, 126, 234, 0.8);
+            }
+        }
+
+        .online_icon {
+            position: absolute;
+            height: 16px;
+            width: 16px;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            border-radius: 50%;
+            bottom: 2px;
+            right: 2px;
+            border: 3px solid rgba(15, 12, 41, 0.85);
+            box-shadow: 0 0 15px rgba(56, 239, 125, 0.8);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 0 15px rgba(56, 239, 125, 0.8);
+            }
+            50% { 
+                transform: scale(1.2);
+                box-shadow: 0 0 25px rgba(56, 239, 125, 1);
+            }
+        }
+
+        .user_info {
+            margin-top: auto;
+            margin-bottom: auto;
+            margin-left: 16px;
+        }
+
+        .user_info span {
+            font-size: 22px;
+            font-weight: 600;
+            color: white;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 10px rgba(102, 126, 234, 0.5);
+        }
+
+        .user_info p {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            margin: 0;
+            font-weight: 400;
+        }
+
+        .msg_card_body {
+            overflow-y: auto;
+            padding: 24px;
+            background: rgba(15, 12, 41, 0.5);
+            height: calc(100vh - 210px);
+            position: relative;
+        }
+
+        .msg_card_body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .msg_card_body > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .msg_card_body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .msg_card_body::-webkit-scrollbar-track {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .msg_card_body::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.4);
+            border-radius: 10px;
+        }
+
+        .msg_card_body::-webkit-scrollbar-thumb:hover {
+            background: rgba(102, 126, 234, 0.6);
+        }
+
+        .img_cont_msg {
+            height: 36px;
+            width: 36px;
+            flex-shrink: 0;
+        }
+
+        .user_img_msg {
+            height: 36px;
+            width: 36px;
+            border: 2px solid rgba(102, 126, 234, 0.4);
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .msg_cotainer {
+            margin-left: 12px;
+            border-radius: 18px 18px 18px 4px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+            color: white;
+            padding: 12px 18px;
+            position: relative;
+            max-width: 70%;
+            word-wrap: break-word;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            animation: slideInLeft 0.4s ease;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .msg_cotainer_send {
+            margin-right: 12px;
+            border-radius: 18px 18px 4px 18px;
+            background: linear-gradient(135deg, rgba(17, 153, 142, 0.9) 0%, rgba(56, 239, 125, 0.9) 100%);
+            color: white;
+            padding: 12px 18px;
+            position: relative;
+            max-width: 70%;
+            word-wrap: break-word;
+            box-shadow: 0 4px 15px rgba(17, 153, 142, 0.4);
+            animation: slideInRight 0.4s ease;
+            border: 1px solid rgba(56, 239, 125, 0.3);
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+
+        .msg_time {
+            position: absolute;
+            left: 0;
+            bottom: -20px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .msg_time_send {
+            position: absolute;
+            right: 0;
+            bottom: -20px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .typing-dots {
+            display: inline-block;
+            font-size: 20px;
+            letter-spacing: 2px;
+            animation: typing 1.4s infinite;
+        }
+
+        @keyframes typing {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .card-footer {
+            border-radius: 0 !important;
+            border-top: 1px solid rgba(102, 126, 234, 0.2) !important;
+            background: rgba(15, 12, 41, 0.9);
+            padding: 20px 24px;
+            backdrop-filter: blur(10px);
+        }
+
+        .type_msg {
+            background: rgba(30, 24, 60, 0.8) !important;
+            border: 2px solid rgba(102, 126, 234, 0.3) !important;
+            border-radius: 16px !important;
+            color: white !important;
+            height: 50px !important;
+            font-size: 15px;
+            padding: 12px 18px;
+            transition: all 0.3s ease;
+        }
+
+        .type_msg:focus {
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3) !important;
+            outline: 0 !important;
+            border-color: rgba(102, 126, 234, 0.6) !important;
+            background: rgba(30, 24, 60, 1) !important;
+        }
+
+        .type_msg::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .send_btn {
+            border-radius: 16px !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border: 0 !important;
+            color: white !important;
+            cursor: pointer;
+            padding: 0 20px;
+            transition: all 0.3s ease;
+            margin-left: 12px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .send_btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .send_btn:active {
+            transform: translateY(0);
+        }
+
+        .send_btn i {
+            font-size: 18px;
+            animation: iconPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes iconPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .rounded-circle {
+            border-radius: 50%;
+        }
+
+        .d-flex {
+            display: flex;
+        }
+
+        .bd-highlight {
+            align-items: center;
+        }
+
+        .justify-content-start {
+            justify-content: flex-start;
+        }
+
+        .justify-content-end {
+            justify-content: flex-end;
+        }
+
+        .justify-content-center {
+            justify-content: center;
+        }
+
+        .mb-4 {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group {
+            display: flex;
+        }
+
+        .form-control {
+            flex: 1;
+        }
+
+        .input-group-append {
+            display: flex;
+        }
+
+        .input-group-text {
+            display: flex;
+            align-items: center;
+        }
+
+        .col-md-8, .col-xl-6 {
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Animated particles -->
+    <script>
+        // Create floating particles
+        for (let i = 0; i < 30; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+            particle.style.animationDelay = Math.random() * 5 + 's';
+            document.body.appendChild(particle);
+        }
+    </script>
+
+    <div class="container-fluid h-100">
+        <div class="row justify-content-center h-100">
+            <div class="col-md-12 col-xl-12 chat">
+                <div class="card">
+                    <div class="card-header msg_head">
+                        <div class="d-flex bd-highlight">
+                            <div class="img_cont">
+                                <img src="https://cdn-icons-png.flaticon.com/512/387/387569.png" class="rounded-circle user_img">
+                                <span class="online_icon"></span>
+                            </div>
+                            <div class="user_info">
+                                <span>MediBot</span>
+                                <p>Your AI Medical Assistant</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="messageFormeight" class="card-body msg_card_body"></div>
+                    <div class="card-footer">
+                        <form id="messageArea" class="input-group">
+                            <input type="text" id="text" name="msg" placeholder="Ask me anything about your health..." autocomplete="off" class="form-control type_msg" required/>
+                            <div class="input-group-append">
+                                <button type="submit" id="send" class="input-group-text send_btn">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $("#messageArea").on("submit", function(event) {
+                event.preventDefault();
+
+                const date = new Date();
+                const hour = date.getHours();
+                const minute = String(date.getMinutes()).padStart(2, "0");
+                const str_time = hour + ":" + minute;
+                const rawText = $("#text").val();
+
+                const userHtml = `
+                    <div class="d-flex justify-content-end mb-4">
+                        <div class="msg_cotainer_send">
+                            ${rawText}
+                            <span class="msg_time_send">${str_time}</span>
+                        </div>
+                        <div class="img_cont_msg">
+                            <img src="https://i.ibb.co/d5b84Xw/Untitled-design.png" class="rounded-circle user_img_msg">
+                        </div>
+                    </div>
+                `;
+
+                $("#text").val("");
+                $("#messageFormeight").append(userHtml);
+                $("#messageFormeight").scrollTop($("#messageFormeight")[0].scrollHeight);
+
+                const loadingHtml = `
+                    <div id="typing" class="d-flex justify-content-start mb-4">
+                        <div class="img_cont_msg">
+                            <img src="https://cdn-icons-png.flaticon.com/512/387/387569.png" class="rounded-circle user_img_msg">
+                        </div>
+                        <div class="msg_cotainer">
+                            <span class="typing-dots">...</span>
+                        </div>
+                    </div>
+                `;
+                $("#messageFormeight").append(loadingHtml);
+
+                $.ajax({
+                    data: { msg: rawText },
+                    type: "POST",
+                    url: "/get",
+                    success: function(data) {
+                        $("#typing").remove();
+                        const botReply = data.response || "Sorry, I couldn't understand that.";
+
+                        const botHtml = `
+                            <div class="d-flex justify-content-start mb-4">
+                                <div class="img_cont_msg">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/387/387569.png" class="rounded-circle user_img_msg">
+                                </div>
+                                <div class="msg_cotainer">
+                                    ${botReply}
+                                    <span class="msg_time">${str_time}</span>
+                                </div>
+                            </div>
+                        `;
+
+                        $("#messageFormeight").append(botHtml);
+                        $("#messageFormeight").scrollTop($("#messageFormeight")[0].scrollHeight);
+                    },
+                    error: function() {
+                        $("#typing").remove();
+                        const errorHtml = `
+                            <div class="d-flex justify-content-start mb-4">
+                                <div class="img_cont_msg">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/387/387569.png" class="rounded-circle user_img_msg">
+                                </div>
+                                <div class="msg_cotainer">
+                                    ⚠️ Server error. Please try again.
+                                    <span class="msg_time">${str_time}</span>
+                                </div>
+                            </div>
+                        `;
+                        $("#messageFormeight").append(errorHtml);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
 </html>
