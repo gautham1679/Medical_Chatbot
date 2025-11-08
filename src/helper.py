@@ -1,11 +1,22 @@
-from langchain.document_loaders import PyPDFLoader, DirectoryLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import HuggingFaceEmbeddings
+# ✅ Updated imports for LangChain 0.2+
+
+# Document loaders
+from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
+
+# Text splitters
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+# Embeddings
+from langchain_huggingface import HuggingFaceEmbeddings
+
+# Typing & schema
 from typing import List
-from langchain.schema import Document
+from langchain_core.documents import Document
 
 
-def load_pdf_files(data):
+
+
+def load_pdf_file(data):
     loader = DirectoryLoader(
         data,
         glob="**/*.pdf",
